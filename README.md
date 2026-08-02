@@ -79,7 +79,7 @@ AgroMind/
 Clone the repository:
 
 ```bash
-git clone https://github.com/deepeshk016/AgroMind.git
+git clone https://github.com/AgroMind-Team/AgroMind
 ```
 
 Go to the project folder:
@@ -146,7 +146,6 @@ A simple social feed where farmers can share experiences and updates.
 * User authentication
 * Weather API integration
 * Market price prediction
-* Disease detection using AI
 * Mobile application
 * Community interactions (likes and comments)
 
