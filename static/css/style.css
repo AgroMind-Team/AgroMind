@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════
-   AGROMIND — Premium Dark Agriculture Dashboard
+  AGROMIND — Premium Dark Agricultural related Dashboard
    ════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
@@ -1033,4 +1033,3 @@ select:focus, input:focus, textarea:focus {
     border-radius:18px;
     margin-top:10px;
 }
-

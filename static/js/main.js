@@ -2,7 +2,7 @@
    AGROMIND — main.js
 ══════════════════════════════════════════════ */
 
-// ── DARK MODE ──────────────────────────────────
+// ── DARK MODE ────────────────────────────────
 function toggleDark() {
   const html = document.documentElement;
   const isDark = html.getAttribute("data-theme") === "dark";

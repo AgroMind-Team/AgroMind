@@ -43,6 +43,7 @@ init_db()
 # ─────────────────────────────────────────
 # LOAD MODELS
 # ─────────────────────────────────────────
+
 crop_model = pickle.load(open("models/crop_model.pkl", "rb"))
 production_model = pickle.load(open("models/production_model.pkl", "rb"))
 
@@ -54,8 +55,8 @@ le_crop = pickle.load(open("models/le_crop.pkl", "rb"))
 # Dictionary
 CHAT_KB = {
     # ───────────────────────────────
-    # SMALL TALK / GREETINGS
-    # ───────────────────────────────
+    # SMALL TALK/GREETINGS
+    # ─────────────────────────────────────────
     "hello|hi|hey|namaste|namaskar|good morning|good evening|good afternoon|yo|sup": {
         "response": "🌱 <b>Namaste!</b> I'm AgroBot, your farming assistant.<br><br>I can help you with:<br>• 🌾 Crop selection & cultivation<br>• 💧 Irrigation & water management<br>• 🌿 Fertilizers & soil health<br>• 💰 MSP prices & market info<br>• 🏛️ Government schemes & subsidies<br>• 🐛 Pest & disease control<br><br>What would you like to know?",
         "followups": ["Best crop for my region?", "Current MSP rates?", "Govt schemes for farmers?"]
@@ -82,7 +83,7 @@ CHAT_KB = {
     },
 
     # ───────────────────────────────
-    # WATER / IRRIGATION
+    # WATER/IRRIGATION
     # ───────────────────────────────
     "water|irrigation|drip|sprinkler|moisture|watering|water requirement|how much water": {
         "response": "💧 <b>Water Requirements by Crop:</b><br>• Rice — Very High (flooding needed)<br>• Wheat — Medium (3-4 irrigations)<br>• Cotton — High (drip irrigation best)<br>• Maize — Medium (critical at flowering)<br>• Sugarcane — Very High (furrow/drip)<br>• Pulses (gram/moong/urad) — Low<br><br>💡 Tip: Drip irrigation saves 40-50% water vs flood irrigation.",
