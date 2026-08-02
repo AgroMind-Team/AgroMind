@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — AgroMind</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  #analyticsMap {
+    height: 460px;
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="grain"></div>
+
+<nav class="navbar">
+  <div class="nav-brand"><span class="brand-icon">⬡</span><span>AgroMind</span></div>
+  <div class="nav-links">
+    <a href="/"><span class="nav-dot"></span>Dashboard</a>
+    <a href="/analytics" class="active"><span class="nav-dot"></span>Analytics</a>
+    <a href="/community"><span class="nav-dot"></span>Community</a>
+  </div>
+  <button class="dark-toggle" onclick="toggleDark()"><span id="theme-icon">☀️</span></button>
+</nav>
+
+<div class="analytics-layout">
+
+  <div class="page-header reveal" style="--delay:0s">
+    <h1 class="page-title">Crop Analytics</h1>
+    <p class="page-sub">Deep comparison of crop metrics, risk profiles and profitability indices</p>
+  </div>
+
+  <div class="kpi-row reveal" style="--delay:0.1s">
+    <div class="kpi-card"><div class="kpi-icon" style="--kc:#a9e34b">🌾</div><div class="kpi-val">--</div><div class="kpi-label">Crops Analysed</div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="--kc:#4ea8de">💧</div><div class="kpi-val">--</div><div class="kpi-label">High Water Crops</div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="--kc:#f4a261">💰</div><div class="kpi-val">--</div><div class="kpi-label">High Profit Crops</div></div>
+    <div class="kpi-card"><div class="kpi-icon" style="--kc:#e63946">⚠️</div><div class="kpi-val">--</div><div class="kpi-label">High Risk Crops</div></div>
+  </div>
+
+  <div class="glass-card reveal" style="--delay:0.2s">
+    <div class="card-header">
+      <div class="card-title">📋 Full Crop Comparison</div>
+      <div class="card-sub">Water · Profit · Risk · Fertilizer · Season</div>
+    </div>
+    <div class="table-wrap">
+      <table class="crop-table">
+        <thead>
+          <tr>
+            <th>Crop</th>
+            <th>💧 Water</th>
+            <th>💰 Profit</th>
+            <th>⚠️ Risk</th>
+            <th>🌿 Fertilizer</th>
+            <th>📅 Season</th>
+          </tr>
+        </thead>
+        <tbody id="crop-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="glass-card chart-card reveal" style="--delay:0.3s">
+      <div class="card-title" style="margin-bottom:18px">💧 Water Requirement Index</div>
+      <canvas id="waterChart"></canvas>
+    </div>
+    <div class="glass-card chart-card reveal" style="--delay:0.35s">
+      <div class="card-title" style="margin-bottom:18px">💰 Profit Potential Score</div>
+      <canvas id="profitChart"></canvas>
+    </div>
+  </div>
+
+  <div class="glass-card reveal" style="--delay:0.4s">
+    <div class="card-header">
+      <div class="card-title">🎯 Risk vs Profit Radar</div>
+      <div class="card-sub">Higher profit with lower risk = ideal crop</div>
+    </div>
+    <div style="max-width:520px;margin:auto"><canvas id="radarChart"></canvas></div>
+  </div>
+
+  <div class="glass-card reveal" style="--delay:0.45s">
+    <div class="card-header">
+      <div class="card-title">🗺️ Crop Analytics Map</div>
+      <div class="card-sub">State-wise crop performance insights</div>
+    </div>
+    <div id="analyticsMap"></div>
+  </div>
+
+</div>
+
+<script src="/static/js/main.js"></script>
+
+<script>
+let analyticsMapInstance = null;
+
+async function loadAnalyticsMap() {
+  const mapEl = document.getElementById("analyticsMap");
+  if (!mapEl) return;
+
+  const mapDataRes = await fetch("/get_analytics_map");
+  const mapData = await mapDataRes.json();
+  if (!mapData || mapData.length === 0) return;
+
+  if (analyticsMapInstance) {
+    analyticsMapInstance.remove();
+  }
+
+  analyticsMapInstance = L.map("analyticsMap").setView([22.5937, 78.9629], 5);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(analyticsMapInstance);
+
+  mapData.forEach(item => {
+    const radius = 8 + (item.profit / 100) * 20;
+    const color =
+      item.water >= 66 ? "#2a9d8f" :
+      item.water >= 33 ? "#e9c46a" : "#457b9d";
+
+    L.circleMarker([item.lat, item.lon], {
+      radius,
+      color,
+      weight: 2,
+      fillColor: color,
+      fillOpacity: 0.55
+    })
+    .bindPopup(`
+      <b>${item.state}</b><br>
+      Top crop: ${item.top_crop}<br>
+      Water index: ${item.water}<br>
+      Profit score: ${item.profit}<br>
+    `)
+    .addTo(analyticsMapInstance);
+  });
+}
+
+async function loadAnalytics() {
+  try {
+    const res = await fetch("/get_analytics");
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      console.log("No analytics data");
+      return;
+    }
+
+    const sorted = [...data]
+      .filter(d => d.profit !== undefined && d.water !== undefined && d.risk !== undefined)
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 10);
+
+    const crops = sorted.map(d => d.crop);
+    const waterScores = sorted.map(d => d.water);
+    const profitScores = sorted.map(d => d.profit);
+
+    const tableBody = document.getElementById("crop-table-body");
+    tableBody.innerHTML = data.map(d => `
+      <tr>
+        <td>${d.crop}</td>
+        <td>${d.water_level}</td>
+        <td>${d.profit_level}</td>
+        <td>${d.risk_level}</td>
+        <td>${d.fertilizer}</td>
+        <td>${d.season}</td>
+      </tr>
+    `).join("");
+
+    makeBar("waterChart", crops, waterScores, "Water Requirement");
+    makeBar("profitChart", crops, profitScores, "Profit Score");
+
+    const radarData = sorted.slice(0, 5);
+
+    new Chart(document.getElementById("radarChart"), {
+      type: "radar",
+      data: {
+        labels: radarData.map(d => d.crop),
+        datasets: [
+          {
+            label: "Profit",
+            data: radarData.map(d => d.profit)
+          },
+          {
+            label: "Risk",
+            data: radarData.map(d => d.risk)
+          }
+        ]
+      }
+    });
+
+    await loadAnalyticsMap();
+
+  } catch (e) {
+    console.error("Analytics error:", e);
+  }
+}
+
+function makeBar(id, labels, data, label) {
+  new Chart(document.getElementById(id), {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: label,
+        data: data,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", loadAnalytics);
+</script>
+
+</body>
+</html>

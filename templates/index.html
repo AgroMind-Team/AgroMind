@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgroMind — Smart Agriculture</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="grain"></div>
+
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">⬡</span><span>AgroMind</span>
+  </div>
+  <div class="nav-links">
+    <a href="/" class="active"><span class="nav-dot"></span>Dashboard</a>
+    <a href="/analytics"><span class="nav-dot"></span>Analytics</a>
+    <a href="/community"><span class="nav-dot"></span>Community</a>
+  </div>
+  <button class="dark-toggle" onclick="toggleDark()"><span id="theme-icon">☀️</span></button>
+</nav>
+
+<div class="layout">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <aside class="panel panel-left">
+
+    <!-- FORM CARD -->
+    <div class="glass-card reveal" style="--delay:0.05s">
+      <div class="card-header">
+        <div class="card-icon">🌱</div>
+        <div>
+          <div class="card-title">Crop Predictor</div>
+          <div class="card-sub">ML-powered recommendations</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>State</label>
+        <div class="select-wrap">
+          <select id="state" onchange="loadDistricts()">
+            <option value="">-- Select State --</option>
+            {% for s in states %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+          </select>
+          <span class="select-arrow">⌄</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>District</label>
+        <div class="select-wrap">
+          <select id="district">
+            <option value="">-- Select State First --</option>
+          </select>
+          <span class="select-arrow">⌄</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Season</label>
+        <div class="select-wrap">
+          <select id="season">
+            {% for s in seasons %}<option>{{ s }}</option>{% endfor %}
+          </select>
+          <span class="select-arrow">⌄</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Area <span class="unit-badge">acres</span></label>
+        <input type="number" id="area" value="10" min="1">
+      </div>
+
+      <button class="btn-predict" onclick="predict()">
+        <span id="btn-text"><span class="btn-spark">✦</span> Analyse & Predict</span>
+        <span id="btn-loader" style="display:none"><span class="spinner"></span> Processing...</span>
+      </button>
+    </div>
+
+<!-- WEATHER CARD -->
+<div class="glass-card reveal" style="--delay:0.15s">
+  <div class="card-header">
+    <div class="card-icon">🌤️</div>
+    <div>
+      <div class="card-title">Live Weather</div>
+      <div class="card-sub" id="city">Mumbai Region</div>
+    </div>
+  </div>
+
+  <div class="weather-grid">
+    
+    <div class="weather-item">
+      <div class="w-icon-wrap" style="--wc:#ff6b35">🌡️</div>
+      <div class="w-val" id="temp">--</div>
+      <div class="w-label">Temperature</div>
+    </div>
+
+    <div class="weather-item">
+      <div class="w-icon-wrap" style="--wc:#4ea8de">💧</div>
+      <div class="w-val" id="humidity">--</div>
+      <div class="w-label">Humidity</div>
+    </div>
+
+    <div class="weather-item">
+      <div class="w-icon-wrap" style="--wc:#74c0fc">🌧️</div>
+      <div class="w-val" id="rain">--</div>
+      <div class="w-label">Rain</div>
+    </div>
+
+    <div class="weather-item">
+      <div class="w-icon-wrap" style="--wc:#a9e34b">💨</div>
+      <div class="w-val" id="wind">-- km/h</div>
+      <div class="w-label">Wind</div>
+    </div>
+
+  </div>
+  </aside>
+
+  <!-- ═══ CENTER PANEL ═══ -->
+  <main class="panel panel-center">
+
+    <div id="placeholder" class="placeholder-box reveal" style="--delay:0.1s">
+      <div class="placeholder-visual">
+        <div class="orbit-ring ring1"></div>
+        <div class="orbit-ring ring2"></div>
+        <div class="orbit-ring ring3"></div>
+        <div class="placeholder-icon">🌾</div>
+      </div>
+      <h2 class="placeholder-title">Ready to Predict</h2>
+      <p>Select your region and area, then hit <strong>Analyse & Predict</strong> to get AI-powered crop recommendations.</p>
+    </div>
+
+    <div id="results" style="display:none">
+
+      <div class="result-hero reveal" style="--delay:0s">
+        <div class="hero-bg-orb orb1"></div>
+        <div class="hero-bg-orb orb2"></div>
+        <div class="hero-label">Top Recommendation</div>
+        <div class="hero-crop" id="best-crop">—</div>
+        <div class="hero-prod" id="production-text">—</div>
+        <div class="hero-plants" id="plant-count">
+         —
+        </div>
+        <div class="hero-badges">
+          <span class="hero-badge">🤖 ML Predicted</span>
+          <span class="hero-badge">✦ High Probability</span>
+        </div>
+      </div>
+
+      <div class="glass-card reveal " style="--delay:0.1s">
+        <div class="card-header">
+          <div class="card-title">🏆 Top 3 Crops</div>
+          <div class="card-sub">By ML probability score</div>
+        </div>
+        <div id="top3-cards" class="top3-grid"></div>
+      </div>
+
+      <div class="glass-card reveal section-spacing" style="--delay:0.15s">
+        <h2 class="card-title">🌾 Alternative Crops</h2>
+        <div id="alternative-crops" class="alt-crops-wrap">
+        <div class="muted-text">No alternatives yet.</div>
+        </div>
+      </div> 
+      
+      <div class="glass-card reveal section-spacing" style="--delay:0.2s">
+        <h2 class="card-title">🌿 Combo Crop Suggestion</h2>
+        <div id="combo-crop-box" class="combo-crop-box">
+        <div class="muted-text">No combo crop suggestion yet.</div>
+        </div>
+      </div>
+      
+      <div class="glass-card reveal section-spacing" style="--delay:0.25s">
+        <h2 class="card-title">⚠️ Risk Alert</h2>
+        <div id="worst-case-box" class="risk-alert-box">
+        <div class="muted-text">No risk alert yet.</div>
+        </div>
+      </div>  
+
+      <div class="glass-card reveal section-spacing" style="--delay:0.3s">
+        <div class="card-header">
+          <div class="card-icon">📋</div>
+          <div class="card-title">Smart Advisory</div>
+        </div>
+        <div id="advisory-list" class="advisory-grid"></div>
+      </div>
+
+      <div class="glass-card reveal section-spacing" style="--delay:0.35s">
+        <div class="card-header">
+          <div class="card-title">📊 Prediction Probability</div>
+        </div>
+        <canvas id="miniChart" height="130"></canvas>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <aside class="panel panel-right">
+
+    <!-- LIVE TICKER -->
+    <div class="glass-card alert-strip reveal" style="--delay:0.05s">
+      <span class="alert-badge">LIVE</span>
+      <div class="ticker-wrap">
+        <div class="ticker">
+          ⚡ Cyclone alert in coastal regions &nbsp;·&nbsp;
+          🌾 MSP for wheat increased ₹150 &nbsp;·&nbsp;
+          💧 Reservoir levels at 68% &nbsp;·&nbsp;
+          🐛 Locust warning in Rajasthan &nbsp;·&nbsp;
+          🌱 Free soil testing camps this weekend &nbsp;·&nbsp;
+          📈 Cotton prices surge 12% this week
+        </div>
+      </div>
+    </div>
+
+    <!-- AGROBOT -->
+    <div class="glass-card chatbot-card reveal" style="--delay:0.1s">
+      <div class="card-header">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <div class="card-title">AgroBot</div>
+          <div class="card-sub online"><span class="online-dot"></span>Online</div>
+        </div>
+      </div>
+      <div id="chat-box" class="chat-box">
+        <div class="chat-msg bot">
+          <div class="msg-avatar">🌿</div>
+          <div class="msg-bubble">Hi! Ask me about water, fertilizers, profit, risk, or season timing.</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask AgroBot..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="send-btn" onclick="sendChat()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="glass-card reveal" style="--delay:0.25s">
+      <div class="card-title" style="margin-bottom:16px">⚡ Quick Stats</div>
+      <div class="stats-list">
+        <div class="stat-row"><span class="stat-label">🌾 Crops Tracked</span><span class="stat-val">124</span></div>
+        <div class="stat-row"><span class="stat-label">📍 States Covered</span><span class="stat-val">29</span></div>
+        <div class="stat-row"><span class="stat-label">📊 Model Accuracy</span><span class="stat-val accent">60-65%</span></div>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+async function loadDistricts() {
+  const state   = document.getElementById("state").value;
+  const distSel = document.getElementById("district");
+
+  if (!state) {
+    distSel.innerHTML = "<option>-- Select State First --</option>";
+    return;
+  }
+
+  distSel.innerHTML = "<option>Loading...</option>";
+
+  try {
+    const res       = await fetch(`/get_districts/${encodeURIComponent(state)}`);
+    const districts = await res.json();
+
+    if (districts.length === 0) {
+      distSel.innerHTML = "<option>No districts found</option>";
+      return;
+    }
+    distSel.innerHTML = districts.map(d => `<option value="${d}">${d}</option>`).join("");
+  } catch(e) {
+    distSel.innerHTML = "<option>Error loading districts</option>";
+  }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const stateEl = document.getElementById("state");
+  if (stateEl && stateEl.value) loadDistricts();
+});
+</script>
+
+</body>
+</html>

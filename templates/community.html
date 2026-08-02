@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Community | AgroMind</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="grain"></div>
+
+<!-- ================= NAVBAR ================= -->
+
+<nav class="navbar">
+
+    <div class="nav-brand">
+        <span class="brand-icon">⬡</span>
+        <span>AgroMind</span>
+    </div>
+
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/analytics">Analytics</a>
+        <a href="/community" class="active">Community</a>
+    </div>
+
+    <button class="dark-toggle" onclick="toggleDark()">
+        <span id="theme-icon">☀️</span>
+    </button>
+
+</nav>
+
+<!-- ================= COMMUNITY ================= -->
+
+<div class="community-page">
+
+    <!-- Create Post -->
+
+    <div class="glass-card create-post-card">
+
+        <div class="composer">
+
+            <div class="composer-avatar">
+                🌾
+            </div>
+
+            <div class="composer-body">
+
+                <input
+                    type="text"
+                    id="post-name"
+                    placeholder="Your Name">
+
+                <textarea
+                    id="post-text"
+                    rows="4"
+                    placeholder="What's happening on your farm today?">
+                </textarea>
+
+                <div class="post-toolbar">
+
+                    <div class="toolbar-left">
+
+                        <label class="upload-btn">
+
+                            🔗 Attach
+
+                            <input
+                                type="file"
+                                id="post-image"
+                                accept="image/*"
+                                hidden>
+
+                        </label>
+
+                    </div>
+
+                    <button
+                        id="create-post-btn"
+                        class="btn-predict">
+
+                        Post
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Feed -->
+
+    <div id="feed-container">
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/community.js') }}"></script>
+
+</body>
+</html>
